@@ -1,8 +1,7 @@
-package com.example.firebasetesting;
+package com.example.myapplication;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -13,6 +12,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.myapplication.database.DBHandler;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
@@ -24,6 +24,8 @@ public class Register extends AppCompatActivity {
     TextView mLogin_btn;
     FirebaseAuth fAuth;
     ProgressBar progressBar;
+
+    DBHandler dbHandler;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -49,7 +51,7 @@ public class Register extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 String email=mEmail.getText().toString().trim();
-                String password=mPassword.getText().toString().trim();
+                final String password=mPassword.getText().toString().trim();
 
                 if(TextUtils.isEmpty(email)){
                     mEmail.setError("Email is Required.");
@@ -65,15 +67,29 @@ public class Register extends AppCompatActivity {
                     mPassword.setError("Password Must Be >=6 Characters");
                     return;
                 }
-
+                dbHandler=new DBHandler(Register.this);
                 progressBar.setVisibility(View.VISIBLE);
 
                 fAuth.createUserWithEmailAndPassword(email,password).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if(task.isSuccessful()){
-                            Toast.makeText(Register.this,"User Created",Toast.LENGTH_SHORT).show();
+                            Toast.makeText(Register.this,"User Created To Firebase",Toast.LENGTH_SHORT).show();
+                            progressBar.setVisibility(View.INVISIBLE);
                             startActivity(new Intent(getApplicationContext(),MainActivity.class));
+
+                            String name = mFullName.getText().toString();
+                            String email = mEmail.getText().toString();
+                            String phone = mPhone.getText().toString();
+                            String password = mPassword.getText().toString();
+
+                            boolean status = dbHandler.addUser(name, email, phone,password);
+
+                            if (status) {
+                                Toast.makeText(Register.this, "SQLite Insert Successfully", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(Register.this, "SQLite Insert Failed", Toast.LENGTH_SHORT).show();
+                            }
                         }else{
                             Toast.makeText(Register.this,"Error !"+task.getException().getMessage(),Toast.LENGTH_SHORT).show();
                             progressBar.setVisibility(View.INVISIBLE);
